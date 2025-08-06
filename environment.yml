@@ -1,4 +1,4 @@
-name: change-this-to-repo-name
+name: cell_browser
 channels:
   - conda-forge
 dependencies:
