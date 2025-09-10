@@ -1,6 +1,6 @@
 ---
-title: 'Quickstart Template for Elemental Microscopy'
-short_title: EM Quickstart
+title: 'Representative microscopy image selection using autoencoders'
+short_title: Objective microscopy image selection
 numbering:
   heading_2: false
 ---
