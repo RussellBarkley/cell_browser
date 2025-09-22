@@ -4,62 +4,61 @@ Chapter 8
 
 # Supplementary Data
 
+## MNIST autoencoder
+
+### Loss plot
+
+:::{figure} #sfig1a_data
+:label: sfig1a
+:placeholder: ./figures/sfig1a.png
+:enumerator: 1a
+Autoencoder reconstruction loss over one-hundred epochs of training on the MNIST dataset.
+:::
+
+### Reconstructed images
+
+:::{figure} #sfig1b_data
+:label: sfig1b
+:placeholder: ./figures/sfig1b.png
+:enumerator: 1b
+Original (left) and reconstructed images (right) can be browsed by index and training epoch.
+:::
+
 ---
 
-# Equations
+# Cherry-picked images for reference
 
-ReLU
-$$
-\quad 
-f(x)=\max(0,x)
-$$
+:::{figure} 
+:label: cell-cycle-phases
+:enumerator: 2
 
-Sigmoid
-$$
-\quad 
-\sigma(x)=\frac{1}{1+e^{-x}}
-$$
+(interphase)=
+![interphase](./figures/interphase.png)
+(prophase)=
+![prophase](./figures/prophase.png)
+(metaphase)=
+![metaphase](./figures/metaphase.png)
+(anaphase)=
+![anaphase](./figures/anaphase.png)
+(telophase)=
+![telophase](./figures/telophase.png)
 
-Linear
-$$
-\quad 
-f(x)=x
-$$
+Cherry-picked images chosen to represent interphase and four stages of mitosis.
 
-Mean Squared Error
-$$
-\quad
-\operatorname{MSE}(\{ \mathbf{y}_i\}, \{\hat{\mathbf{y}}_i\}) 
-= \frac{1}{n}\sum_{i=1}^{n}\lVert \mathbf{y}_i-\hat{\mathbf{y}}_i\rVert_2^{2}
-$$
+:::
 
-Data
-$$
-\quad
-X_\ell \;=\;\{\,x_i \in [0,1]^d\,\}_{i=1}^{N_\ell},\quad d=28\times 28=784
-$$
+```{figure} ./figures/artifact.png
+:label: cellpose_artifact
+:align: center
+:enumerator: 3
 
-Arithmetic mean
-$$
-\label{equation_A}
-\quad
-\mu_\ell \;=\;\frac{1}{N_\ell}\sum_{i=1}^{N_\ell} x_i
-\;\;\in\; \mathbb{R}^d
-$$
+An example of a blank image created by cellpose segmentation artifacts.
+```
 
-Median
-$$
-\label{equation_B}
-\quad
-m_\ell[j] \;\in\; \underset{z\in\mathbb{R}}{\arg\min}\;
-\sum_{i=1}^{N_\ell} \lvert z - x_i[j]\rvert,\qquad j=1,\dots,d,
-\quad\text{and}\quad
-m_\ell=\big(m_\ell[1],\dots,m_\ell[d]\big)\in\mathbb{R}^d
-$$
+```{figure} ./figures/unreal_interpolation.png
+:label: unrealistic_interpolation
+:align: center
+:enumerator: 4
 
-Geometric median
-$$
-\label{equation_C}
-\quad
-g_\ell \;\in\; \underset{x\in\mathbb{R}^d}{\arg\min}\;\sum_{i=1}^{N_\ell}\big\lVert x - x_i\big\rVert_2
-$$
+An example of unrealistic decodings along interpolated latent vectors.
+```

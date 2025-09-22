@@ -16,3 +16,6 @@ dependencies:
   - jupyterlab-myst
   - 'nodejs>=20,<21'
   - mystmd
+  - tifffile
+  - tensorflow
+  - pillow

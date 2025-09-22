@@ -4,71 +4,84 @@ Chapter 5
 
 # Results
 
-We saved the latent space using {ref}`embed_latents`, which encoded the images into 512-dimensional latent vectors using the trained encoder weights. Each latent vector is a compressed representation of an original grayscale image in the bottleneck of the autoencoder.
+The dataset of grayscale images was encoded into 512-dimensional latent vectors using the saved encoder weights ({ref}`embed_latents`). Latent vectors are compressed representations of grayscale images in the lower-dimensional bottleneck of the autoencoder. The purpose of this analysis was not to interpret the latent space for scientific inquiry or biological discovery. Instead, we aimed to show the latent codes of an unsupervised autoencoder trained on the cropped nucleus dataset to assess the structure of latent space. Thereafter, we demonstrated an autoencoder-based method of objective representative image selection using centroids of this latent space.
 
-## Latent space distribution
+## Latent space _distribution_
 
-The distribution of values in each dimension is viewable in {Figure 6A}. Most dimensions are zero-centered gaussians, so the latent space 
+Per-dimension histograms show the distribution of values in latent space ([Figure 8a](#fig8a)). Most dimensions approximated zero-centered gaussian distributions, though there were several skewed distributions with value deviating from zero.
 
-:::{figure} #fig:ae1m-distribution
-:name: fig6A
-:placeholder: ./figures/fig6a.png
-Example widget.
+:::{figure} #ae1m-distribution
+:label: fig8a
+:placeholder: ./figures/fig8a.png
+:enumerator: 8a
+Histogram of N=1,071,277 latent vectors corresponding to grayscale images of cropped nuclei. Control the dimension or percentile and bins of the distribution shown with the sliders.
 :::
 
-## Latent space interpolation
+## Latent space _interpolation_
 
-A common method for evaluating the quality of latent space is with interpolation, whereby mixing codes in latent space and decoding the result creates a semantically meaningful combination of the datapoints [@doi:10.48550/arXiv.1807.07543]. Interpolating with an autoencoder describes the process of using the decoder to decode a convex combination of two latent vectors [@doi:10.48550/arXiv.1807.07543]. A high-quality interpolation should have two characteristics: intermediate points along the interpolation should resemble real data and they should provide a semantically meaningful transition between the endpoints [@doi:10.48550/arXiv.1807.07543].
+A common method to evaluate the quality of latent space is interpolation, whereby mixing codes in latent space and decoding the result creates a semantically meaningful combination of the datapoints [@doi:10.48550/arXiv.1807.07543]. Interpolating with an autoencoder describes the process of using the decoder to decode a convex combination of two latent vectors [@doi:10.48550/arXiv.1807.07543]. A high-quality interpolation should have two characteristics: intermediate points along the interpolation should resemble real data and they should provide a semantically meaningful transition between the endpoints [@doi:10.48550/arXiv.1807.07543]. Interpolating between any two latent vectors of embedded nucleus images produced reasonable intermediate reconstructions from the decoder with a smooth transition between endpoints ([Figure 8b](#fig8b)). This result is consistent with the literature describing smooth interpolations with base model autoencoders [@doi:10.48550/arXiv.1807.07543]. The authors noted that intermediate points did not always resemble real data, which was true with the nucleus interpolations. For example, [unrealistic](#unrealistic_interpolation) samples were observed in interpolations between latent vectors of nuclei with different size or image features.
 
-Interpolating between any two vectors from the latent space produced reasonable intermediate reconstructions with a smooth transition between endpoints. This result is consistent with the literature that described smooth interpolations with base model autoencoders [@doi:10.48550/arXiv.1807.07543] and also observed that intermediate points do not always resemble real data. We see this result as well in the interpolations of the "vanilla" autoencoder trained on the nucleus dataset, especially between images with markedly different image features, where unrealistic samples are generated.
-
-:::{figure} #fig:ae1m-interpolation
-:name: fig6B
-:placeholder: ./figures/fig6B.png
-Example widget.
+:::{figure} #ae1m-interpolation
+:label: fig8b
+:placeholder: ./figures/fig8b.png
+:enumerator: 8b
+Decoded latent vectors along intermediate points of interpolations between random pairs of images. Executing the code will randomly draw 1,000 images from the dataset. Shuffle 100 random pairs for browsing.
 :::
 
-## Latent space visualization
+## Latent space _visualization_
 
-To visualize the latent space, we pre-computed dimensionality reduction techniques like t-SNE (cite), UMAP (cite) and PCA (cite) that can project the high dimensional space down to two dimensions. It is helpful to plot the datapoints as thumbnails to present the population variation of the dataset in latent space (cite). We applied t-SNE using {ref}`ae1m-tsne`, UMAP with {ref}`ae1m-umap` and PCA with {ref}`ae1m-pca` and saved the output for plotting in Figures 6C-6E. We implemented a toggle that will select 10,000 random images to visualize as a thumbnail.
-
-
-so we implemented a toggle that will select 10,000 random images (or a subsample of ~1% of dataset) to visualize as a thumbnail.
-
-
-The 512-dimensional latent space was projected down to two dimensions using t-SNE, UMAP, and PCA. The latent space is over 1,000,000 vectors which produced dense plots. It is helpful to see the thumbnail of a subset of the vectors to better understand how the plots distribute the images. Toggle the thumbnail overlay to view 10,000 random thumbnails, or roughly ~1% of the dataset, using your preferred two-dimensional projection of latent space.
+Dimensionality reduction techniques like t-SNE by {cite}`JMLR:v9:vandermaaten08a`, UMAP [@doi:10.21105/joss.00861] and PCA [@doi:10.1007/b98835] are common methods to visualize the high-dimensional latent space of machine learning models like autoencoders [@doi:10.1111/cgf.13672]. These plots are analagous to map projections that transform the round surface of the earth onto a flat map, there is no single perfect projection. Like map projections, latent space projections can emphasize or hide certain characteristics. We pre-computed t-SNE and UMAP embeddings with default settings and PCA initialization [@doi:10.1038/nbt.4314]. An embedding was made for two distance metrics; Euclidean distance and cosine similarity, and ten PCA embeddings compared every combination of the top five prinipal components ({ref}`embeddings`). This was meant to allow for interaction to show parameters can affect the projections ([Figure 8c](#fig8c), [Figure 8e](#fig8e) and [Figure 8g](#fig8g)). We also found it helpful to present the data as image thumbnails, so we made static figures that plotted 10,000 random image thumbnails ([Figure 8d](#fig8d), [Figure 8f](#fig8f), [Figure 8h](#fig8h)) which are best viewed as EMMA maps [@doi:10.1242/jcs.262198]. Consider that only one percent of the dataset was shown in these thumbnail projections.
 
 ### t-SNE
 
-:::{figure} #fig:ae1m-t-SNE
-:name: fig6C
-:placeholder: ./figures/fig6C.png
-Example widget.
+:::{figure} #ae1m-tsne
+:label: fig8c
+:placeholder: ./figures/fig8c.png
+:enumerator: 8c
+Figure legend.
 :::
 
-```{figure} ./figures/tsne_points_plus_10k_thumbs.png
-:name: fig2
+```{figure} ./figures/fig8d.png
+:name: fig8d
 :align: center
 :width: 100%
-
-The method of automated data collection and representative image selection used in our fluorescence confocal microscopy experiments imaging the cell nucleus. A) 
+:enumerator: 8d
+Figure legend.
 ```
 
 ### UMAP
 
-:::{figure} #fig:AE1M-UMAP
-:name: fig6D
-:placeholder: ./figures/fig6D.png
-Example widget.
+:::{figure} #ae1m-umap
+:label: fig8e
+:placeholder: ./figures/fig8e.png
+:enumerator: 8e
+Figure legend.
 :::
+
+```{figure} ./figures/fig8f.png
+:label: fig8f
+:align: center
+:width: 100%
+:enumerator: 8f
+Figure legend.
+```
 
 ### PCA
 
-:::{figure} #fig:AE1M-PCA
-:name: fig6E
-:placeholder: ./figures/fig6E.png
-Example widget.
+:::{figure} #ae1m-pca
+:label: fig8g
+:placeholder: ./figures/fig8g.png
+:enumerator: 8g
+Figure legend.
 :::
+
+```{figure} ./figures/fig8h.png
+:name: fig8h
+:align: center
+:width: 100%
+:enumerator: 8h
+Figure legend.
+```
 
 ---
 
@@ -76,47 +89,53 @@ Example widget.
 
 ### Anomaly detection
 
-Autoencoder-based anomaly detection is a common application that reconstructs images using a trained model to evaluate the distribution of reconstruction losses for the dataset. Images with MSE values at the extreme ends of the distribution are considered anomalous. We reconstructed the nucleus dataset with the trained model and saved the MSE loss for each image using {ref}`AE1M-MSE-loss`.
+Autoencoder-based anomaly detection is a common application that typically evaluates the distribution of MSE reconstruction loss and images at the extreme ends of the distribution are considered anomalous. We embedded and reconstructed the dataset with the trained model and saved the MSE loss for each image ({ref}`mse-per-image`). The data was sorted by reconstruction loss to identify 10,000 images in each of the one percentile ends of the MSE distribution, what may considered anomalous [Figure 9a](#fig9a). The low end of the distribution had hundreds of what appeared to be [blank images](#cellpose_artifact) until the dynamic range was reduced to 0-2 which revealed artifacts created by the cellpose segmentation model. Interestingly, these artifacts appeared as separate clusters in the t-SNE ([Figure 8d](#fig8d)) and UMAP ([Figure 8f](#fig8f)) plots. The bottom one percentile of the MSE distribution consisted of images with low brightness, and we noted many cells in the [metaphase](#metaphase) stage of mitosis. The upper one percentile of the MSE distribution contained images of large, bright nuclei, as well as an enrichment of cells in the [prophase](#prophase) stage of mitosis with condensing chromosomes. We considered cleaning the dataset to remove the top and bottom two-and-a-half percentiles, leaving the middle ninety-five percent of the MSE distribution, which would still be more than one million images. Removing outliers would remove cellpose artifacts and it could improve model training and analysis, but at the cost of removing rare biological phenotypes which was unacceptable. Altogether, this showed that artifacts and uncommon phenotypes were overrepresented in the tails of the MSE distribution, which demonstrated unsupervised autoencoder-based anomaly detection with the nucleus dataset.
 
-The images were sorted by MSE to define the 50,000 images with the highest or lowest reconstruction loss, which are the extreme five percentiles of the distribution. These anomalies, ordered by MSE, are shown in Figure 7A. We observed synthetic line artifacts produced by cellpose at the low end, as well as images with low signal intensity. On the high end are bright, large nuclei and a concentration of examples of the ___ phenotype (cite). This shows that data pre-processing artifacts and rare nucleus phenotypes can be found as anomalies using autoecoder-based methods that evaluate reconstruction loss.
+:::{figure} #ae1m-MSE-distribution
+:name: fig9a
+:placeholder: ./figures/fig9a.png
+:enumerator: 9a
+Example widget.
+:::
 
-:::{figure} #fig:AE1M-anomaly
-:name: fig7A
-:placeholder: ./figures/fig7A.png
+:::{figure} #ae1m-anomaly
+:name: fig9b
+:placeholder: ./figures/fig9b.png
+:enumerator: 9b
 Example widget.
 :::
 
 ### Information retrieval
 
-Another useful application for autoencoders is information storage and retrieval. In Figure 7B we implemented a tool where a random subsample of 1% the dataset is shown and individual images can be queried for a reverse image search. This works by encoding the query image with the trained model then the latent vector is compared to the saved latent space. Euclidean distance and cosine similarity were the two chosen distance metrics to define the query vector with respect to every image in the dataset including itself. Thus, we expect that the top result will be the query image which is indicated by a red outline in the plot. The images closest to the query image have semantic similarity, which is a notion that is problem-dependent and ill-defined [@doi:10.48550/arXiv.1807.07543]. Similar vectors in latent space share properties like orientation, shape, brightness, texture, size etc. even though these are features that were not pre-defined, which was a limitation to the objectivity of previous methods of microscopy image selection <https://doi.org/10.1016/s0006-3495(99)77379-0>.
+Another application for autoencoders is information storage and retrieval. In Figure 7B we implemented a tool where a random subsample of 1% the dataset is shown and images can be queried for a reverse image search using the latent space. This works by encoding the query image with the trained model then the latent vector is compared to the saved latent space. Euclidean distance and cosine similarity were the two chosen distance metrics to define the query vector with respect to every image in the dataset including itself. Thus, we expect that the top result will be the query image which is indicated by a red outline in the plot. The images closest to the query image have semantic similarity, which is a notion that is problem-dependent and ill-defined [@doi:10.48550/arXiv.1807.07543]. Similar vectors in latent space share properties like orientation, shape, brightness, texture, size etc. even though these are features that were not pre-defined, which was a limitation to the objectivity of previous methods of microscopy image selection <https://doi.org/10.1016/s0006-3495(99)77379-0>.
 
-:::{figure} #fig:AE1M-retrieval
-:name: fig7B
-:placeholder: ./figures/fig7B.png
+:::{figure} #fig:ae1m-reverse-image-search
+:name: fig8C
+:placeholder: ./figures/fig8c.png
 Example widget.
 :::
 
 ---
 
-# Autoencoder-based determination of representative images
+# Autoencoder-based determination of representative microscopy images
 
-## Computation of a theoretical average vector
+## 1. Computation of a theoretical image
 
-We calculated theoretical latent vectors at measures of central tendency like the [arithmetic mean](#equation_H), [median](#equation_I) and [geometric median](#equation_K) of the entire latent embedding. These averaged latent vectors were then reconstructed by the decoder to synthesize theoretical representative images of the nucleus (Figure 8A). Theoretical representative images do not necessarily look like real data [@doi:10.1109/BIP60195.2023.10379342], so these reconstructions do not represent real nuclei.
+We calculated theoretical latent vectors using measures of central tendency like the [arithmetic mean](#equation_H), [median](#equation_I) and [geometric median](#equation_K) in latent space. These averaged latent vectors were reconstructed with the decoder to synthesize theoretical representative images of the nucleus (Figure 8A). Theoretical representative images do not necessarily look like real data [@doi:10.1109/BIP60195.2023.10379342], so these reconstructions do not represent real nuclei, but they possess some peculiar characteristics. Notably, what appears to be background signal around the nucleus is apparent with the dynamic range around 0-12, which is a characteristic of the dataset that we noted earlier. Otherwise, the theoretical average nuclei appeared to be a blend of image features which resembled a nucleus in interphase, though there is little detail or variance like spots vacated by nucleoli.
 
-:::{figure} #fig:AE1M-theoretical
-:name: fig8A
-:placeholder: ./figures/fig8A.png
+:::{figure} #fig:ae1m-theoretical
+:name: fig9A
+:placeholder: ./figures/fig9a.png
 Example widget.
 :::
 
-## Determination of a prototypical vector
+## 2. Determination of a prototypical image
 
 Using the methods of information retrieval shown in Figure 7B, we encoded the theoretical latent vector reconstructions then calculated distance metrics that defined each practical image vector with respect to the theoretical image vectors (Figure 8B). Practical representative images are defined by a low euclidean distance or high cosine similarity to the theoretical representative image in latent space.
 
 :::{figure} #fig:AE1M-practical
-:name: fig8B
-:placeholder: ./figures/fig8B.png
+:name: fig9B
+:placeholder: ./figures/fig.png
 Example widget.
 :::
 

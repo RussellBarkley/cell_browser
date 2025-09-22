@@ -1,18 +1,204 @@
 ---
 Chapter 9
 ---
-# MNIST example
-## Literature reproduction
+
+# Preliminaries
+
+## Autoencoder model trained on the MNIST dataset
+
 ```{code} python
-:label: lit-repro
-:caption: Sorting images into four quarters and renaming them to stitch 25x25 tile grids.
+:label: mnist-ae
+
+import os
+import numpy as np
+import tensorflow as tf
+import h5py
+from PIL import Image
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import (
+    Input,
+    Conv2D,
+    Conv2DTranspose,
+    AveragePooling2D,
+    Flatten,
+    Dense,
+    Reshape,
+    ReLU,
+)
+from tensorflow.keras.callbacks import CSVLogger, Callback
+from tensorflow.keras.optimizers import Adam
+
+# ────────────────────────────────────────
+# 0) GPU memory growth
+# ────────────────────────────────────────
+for g in tf.config.list_physical_devices("GPU"):
+    tf.config.experimental.set_memory_growth(g, True)
+
+# ────────────────────────────────────────
+# 1) Output directories
+# ────────────────────────────────────────
+BASE_RESULTS_DIR = r"D:\Results\091925_mnist_ae"
+TRAIN_RECON_DIR  = os.path.join(BASE_RESULTS_DIR, "recon_train")
+VAL_RECON_DIR    = os.path.join(BASE_RESULTS_DIR, "recon_val")
+os.makedirs(TRAIN_RECON_DIR, exist_ok=True)
+os.makedirs(VAL_RECON_DIR,   exist_ok=True)
+
+# ────────────────────────────────────────
+# 2) Load & preprocess MNIST
+# ────────────────────────────────────────
+(x_train, y_train), (x_val, y_val) = tf.keras.datasets.mnist.load_data()
+x_train = np.expand_dims(x_train.astype("float32") / 255.0, -1)
+x_val   = np.expand_dims(x_val.astype("float32")   / 255.0, -1)
+
+# ────────────────────────────────────────
+# 3) Hyperparameters
+# ────────────────────────────────────────
+n_layers      = 2
+base_filters  = 16
+latent_dim    = 64
+learning_rate = 3e-4
+batch_size    = 32
+epochs        = 100
+
+AUTOTUNE = tf.data.AUTOTUNE
+train_ds = (
+    tf.data.Dataset
+      .from_tensor_slices((x_train, x_train))
+      .shuffle(10_000)
+      .batch(batch_size)
+      .prefetch(AUTOTUNE)
+)
+val_ds = (
+    tf.data.Dataset
+      .from_tensor_slices((x_val, x_val))
+      .batch(batch_size)
+      .prefetch(AUTOTUNE)
+)
+
+# ────────────────────────────────────────
+# 4) Build conv autoencoder with single 3×3 conv per block
+# ────────────────────────────────────────
+# Encoder
+inp = Input((28,28,1), name="encoder_input")
+x = inp
+for i in range(n_layers):
+    f = base_filters * (2**i)
+    x = Conv2D(f, 3, padding="same")(x)
+    x = ReLU()(x)
+    x = AveragePooling2D()(x)
+
+flat = Flatten()(x)
+z    = Dense(latent_dim, name="z")(flat)
+encoder = Model(inp, z, name="encoder")
+
+# Decoder
+latent_in = Input((latent_dim,), name="z_sampling")
+spatial = 28 // (2**n_layers)
+channels = base_filters * (2**(n_layers-1))
+x = Dense(spatial * spatial * channels)(latent_in)
+x = Reshape((spatial, spatial, channels))(x)
+
+for i in reversed(range(n_layers)):
+    f = base_filters * (2**i)
+    x = Conv2DTranspose(f, 3, strides=(2,2), padding="same")(x)
+    x = ReLU()(x)
+
+decoded = Conv2D(1, 3, padding="same", activation="sigmoid", name="decoder_output")(x)
+decoder = Model(latent_in, decoded, name="decoder")
+
+ae = Model(inp, decoder(encoder(inp)), name="autoencoder")
+ae.compile(
+    optimizer=Adam(learning_rate=learning_rate),
+    loss="mse",
+    metrics=["mse"],
+)
+
+# ────────────────────────────────────────
+# 5) Callback to save originals & reconstructions
+# ────────────────────────────────────────
+class ReconMNISTCallback(Callback):
+    def __init__(self, data, num=100, save_dir=None):
+        super().__init__()
+        self.data     = data
+        self.num      = num
+        self.save_dir = save_dir
+        self.idx      = np.random.choice(len(data), num, replace=False)
+
+    def on_epoch_end(self, epoch, logs=None):
+        imgs   = self.data[self.idx]
+        recons = self.model.predict(imgs, verbose=0)
+
+        orig_dir  = os.path.join(self.save_dir, "originals")
+        recon_dir = os.path.join(self.save_dir, "reconstructions")
+        os.makedirs(orig_dir,  exist_ok=True)
+        os.makedirs(recon_dir, exist_ok=True)
+
+        ep = epoch + 1
+        for i in range(self.num):
+            orig_img  = (imgs[i,...,0] * 255).astype(np.uint8)
+            recon_img = (recons[i,...,0] * 255).astype(np.uint8)
+
+            Image.fromarray(orig_img).save(
+                os.path.join(orig_dir, f"orig_epoch{ep:03d}_{i:03d}.png")
+            )
+            Image.fromarray(recon_img).save(
+                os.path.join(recon_dir, f"recon_epoch{ep:03d}_{i:03d}.png")
+            )
+
+recon_train_cb = ReconMNISTCallback(x_train, num=100, save_dir=TRAIN_RECON_DIR)
+recon_val_cb   = ReconMNISTCallback(x_val,   num=100, save_dir=VAL_RECON_DIR)
+
+# ────────────────────────────────────────
+# 6) Train
+# ────────────────────────────────────────
+csv_logger = CSVLogger(os.path.join(BASE_RESULTS_DIR, "training_log.csv"), append=False)
+ae.fit(
+    train_ds,
+    validation_data=val_ds,
+    epochs=epochs,
+    callbacks=[
+        csv_logger,
+        recon_train_cb,
+        recon_val_cb,
+    ]
+)
+
+# ────────────────────────────────────────
+# 7) Save weights & extract latents
+# ────────────────────────────────────────
+encoder.save_weights(os.path.join(BASE_RESULTS_DIR, "encoder_weights.h5"))
+decoder.save_weights(os.path.join(BASE_RESULTS_DIR, "decoder_weights.h5"))
+
+all_images = np.concatenate([x_train, x_val], axis=0)
+all_labels = np.concatenate([y_train, y_val], axis=0)
+n_total    = all_images.shape[0]
+
+inf_ds = tf.data.Dataset.from_tensor_slices(all_images).batch(batch_size)
+
+h5_path = os.path.join(BASE_RESULTS_DIR, "latents.h5")
+with h5py.File(h5_path, "w") as hf:
+    hf.create_dataset("z",      shape=(n_total, latent_dim), dtype="f4")
+    hf.create_dataset("labels", shape=(n_total,),             dtype="i8")
+    idx = 0
+    for batch in inf_ds:
+        z_batch = encoder.predict(batch, verbose=0)
+        b = z_batch.shape[0]
+        hf["z"][idx:idx+b, :]   = z_batch
+        hf["labels"][idx:idx+b] = all_labels[idx:idx+b]
+        idx += b
+
+print(f"[DONE] Latents + labels saved to {h5_path}")
 
 ```
-# Data collection
+
+# Methods
+
 ## 1. Sort tiles into quarters
+
 ```{code} python
 :label: sort-quarters
-:caption: Sorting images into four quarters and renaming them to stitch 25x25 tile grids.
+:caption: Sort images into four quarters and rename them to stitch 25x25 tile grids.
+
 import os
 import glob
 import shutil
@@ -170,7 +356,7 @@ if __name__ == "__main__":
 
 ```{code} python
 :label: crop-quarters
-:caption: Cropping the stitched quarters into quarters, resulting in sixteen stitched images per coverslip.
+:caption: Crop the stitched quarters into quarters, resulting in sixteen stitched images.
 
 from PIL import Image
 import os
@@ -226,7 +412,7 @@ print("Tiling complete!")
 
 ```{code} python
 :label: crop-rois
-:caption: 
+:caption: Center, pre-align and crop the masked ROIs.
 
 import os
 import numpy as np
@@ -372,144 +558,240 @@ if __name__ == '__main__':
     print("Cropping completed!")
 ```
 
-## Sub-sample 50,000 images
+# Dataset
+
+## Measure number and mean intensity of ROIs in stitched images
 
 ```{code} python
-:label: fivepercentsample
-:caption: 
-
-#!/usr/bin/env python3
-"""
-Randomly sample 50,000 TIFF images from a very large folder (streamed, memory-safe),
-save the selected source paths to a .txt file, and copy them to a new folder.
-
-Source:  D:\\Confocal_imaging_nuclei_tif\\MIST_Fused_Images\\ROIs
-Target:  D:\\FivePercentSample
-List:    D:\\FivePercentSample\\sample_paths.txt
-
-- Uses reservoir sampling (no giant file list in RAM).
-- Filters for .tif/.tiff (case-insensitive).
-- Saves the chosen file paths to a .txt file (one per line).
-- Avoids filename collisions in the destination by appending __N.
-- Optional: set RANDOM_SEED for reproducibility.
-"""
+:label: scatter-code
 
 import os
-import random
-import shutil
-from typing import Iterable, List, Optional
+import glob
+import csv
+import warnings
 
-# ── CONFIG ────────────────────────────────────────────────────────────────────
-DATASET_DIR = r"D:\Confocal_imaging_nuclei_tif\MIST_Fused_Images\ROIs"
-OUTPUT_DIR  = r"D:\FivePercentSample"
-PATHS_TXT   = r"D:\FivePercentSample\sample_paths.txt"
-SAMPLE_SIZE = 50_000
-RANDOM_SEED: Optional[int] = 42  # set to None for non-deterministic sampling
-RECURSIVE   = False              # set True if you want to include subfolders
-# ──────────────────────────────────────────────────────────────────────────────
+import numpy as np
+from tifffile import imread as tif_read
+from PIL import Image
+from PIL.Image import DecompressionBombWarning, DecompressionBombError
 
+# -----------------------------------------------------------------------------
+# DISABLE THE WARNING AND PREPARE FOR ERROR-BYPASS
+# -----------------------------------------------------------------------------
+# Suppress the warning
+warnings.simplefilter('ignore', DecompressionBombWarning)
+# Remove any size limit
+Image.MAX_IMAGE_PIXELS = None
 
-def iter_image_paths(root: str, recursive: bool = False) -> Iterable[str]:
-    """Yield full paths to .tif/.tiff files under root (optionally recursive)."""
-    exts = {".tif", ".tiff"}
-    if recursive:
-        for dirpath, _, filenames in os.walk(root):
-            for name in filenames:
-                if os.path.splitext(name)[1].lower() in exts:
-                    yield os.path.join(dirpath, name)
-    else:
-        with os.scandir(root) as it:
-            for entry in it:
-                if entry.is_file():
-                    if os.path.splitext(entry.name)[1].lower() in exts:
-                        yield entry.path
-
-
-def reservoir_sample(paths: Iterable[str], k: int, seed: Optional[int] = None) -> List[str]:
+def safe_open(path):
     """
-    Reservoir sample k items from an iterator of unknown/huge length.
-    Returns a list of selected paths (len <= k if fewer available).
+    Try Image.open; if a DecompressionBombError is raised,
+    reset MAX_IMAGE_PIXELS and retry once.
     """
-    rng = random.Random(seed) if seed is not None else random
-    reservoir: List[str] = []
-    n = 0
+    try:
+        return Image.open(path)
+    except DecompressionBombError:
+        Image.MAX_IMAGE_PIXELS = None
+        return Image.open(path)
+# -----------------------------------------------------------------------------
 
-    for p in paths:
-        if n < k:
-            reservoir.append(p)
-        else:
-            j = rng.randint(0, n)  # inclusive
-            if j < k:
-                reservoir[j] = p
-        n += 1
-        if n % 200_000 == 0:
-            print(f"[SCAN] Seen {n:,} files so far...")
+# -----------------------------------------------------------------------------
+# CONFIGURATION
+# -----------------------------------------------------------------------------
+input_dir  = r'D:\Confocal_imaging_nuclei_tif\MIST_Fused_Images'
+output_csv = os.path.join(input_dir, 'results.csv')
+# -----------------------------------------------------------------------------
 
-    print(f"[DONE SCAN] Total images seen: {n:,}")
-    if n < k:
-        print(f"[WARN] Only {n:,} images available; sampling {n:,} instead of {k:,}.")
-    return reservoir
-
-
-def safe_copy(src: str, dst_dir: str) -> str:
+def process_image_pair(tif_path, mask_path):
     """
-    Copy src into dst_dir. If a file with the same name exists, append __N before the extension.
-    Returns the final destination path.
+    Returns (num_rois, mean_intensity_all_rois, std_intensity_all_rois)
     """
-    os.makedirs(dst_dir, exist_ok=True)
-    base = os.path.basename(src)
-    name, ext = os.path.splitext(base)
-    dst = os.path.join(dst_dir, base)
+    img = tif_read(tif_path).astype(np.float32)
+    mask = np.array(safe_open(mask_path))
 
-    if not os.path.exists(dst):
-        shutil.copy2(src, dst)
-        return dst
+    labels   = np.unique(mask)
+    roi_ids  = labels[labels > 0]
+    num_rois = roi_ids.size
 
-    # Collision: append __1, __2, ...
-    n = 1
-    while True:
-        candidate = os.path.join(dst_dir, f"{name}__{n}{ext}")
-        if not os.path.exists(candidate):
-            shutil.copy2(src, candidate)
-            return candidate
-        n += 1
+    if num_rois == 0:
+        return 0, float('nan'), float('nan')
 
+    pixels = img[mask > 0]
+    mean_i = float(np.mean(pixels))
+    std_i  = float(np.std(pixels))
+
+    return num_rois, mean_i, std_i
 
 def main():
-    print("[START] Streaming and sampling...")
-    sample = reservoir_sample(iter_image_paths(DATASET_DIR, RECURSIVE), SAMPLE_SIZE, RANDOM_SEED)
-    print(f"[SAMPLE] Selected {len(sample):,} images.")
+    with open(output_csv, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(['image', 'num_rois', 'mean_intensity', 'std_intensity'])
 
-    # Ensure output directory exists before writing the list
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+        for tif_path in sorted(glob.glob(os.path.join(input_dir, '*.tif'))):
+            base = os.path.splitext(os.path.basename(tif_path))[0]
+            mask_name = base + '_cp_masks.png'
+            mask_path = os.path.join(input_dir, mask_name)
 
-    # Write the selected source paths to a .txt file (one per line)
-    with open(PATHS_TXT, "w", encoding="utf-8") as f:
-        for p in sample:
-            f.write(p + "\n")
-    print(f"[WRITE] Wrote selected paths to: {PATHS_TXT}")
+            if not os.path.exists(mask_path):
+                print(f"Skipping {base}: no mask named '{mask_name}'")
+                continue
 
-    # Copy files
-    print(f"[COPY] Beginning copy to: {OUTPUT_DIR}")
-    for i, src in enumerate(sample, start=1):
-        safe_copy(src, OUTPUT_DIR)
-        if i % 1_000 == 0:
-            print(f"[COPY] {i:,}/{len(sample):,} copied...")
+            n, mean_i, std_i = process_image_pair(tif_path, mask_path)
+            writer.writerow([base + '.tif', n, f"{mean_i:.4f}", f"{std_i:.4f}"])
+            print(f"Processed {base}: ROIs={n}, mean={mean_i:.2f}, std={std_i:.2f}")
 
-    print(f"[DONE] Copied {len(sample):,} images to {OUTPUT_DIR}")
+    print(f"\nResults written to: {output_csv}")
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
 ```
 
-# Nucleus Dataset
+```{code} python
+:label: ten-stitched-images
+:caption: Prints ten stitched images closest to the centroid by z-score normalized euclidean distance.
 
-## AE1M
+#!/usr/bin/env python3
+# Find 10 images closest to the mean centroid with equal weighting of features.
+# Also print the per-image std (if a std-like column exists).
+
+import os, sys
+import pandas as pd
+import numpy as np
+
+CSV_PATH = r"D:\Results\Interactive_figures\Stitched_sixteenth\results.csv"
+
+def find_col(cols, names):
+    lc = {c.lower(): c for c in cols}
+    for n in names:
+        n = n.lower()
+        if n in lc:
+            return lc[n]
+        for k, v in lc.items():
+            if n in k:
+                return v
+    return None
+
+df = pd.read_csv(CSV_PATH)
+
+img_col   = find_col(df.columns, ["image","filename","file","img"])
+nroi_col  = find_col(df.columns, ["num_rois","n_rois","roi_count"])
+mean_col  = find_col(df.columns, ["mean_intensity","mean_inte","avg_intensity"])
+std_col   = find_col(df.columns, ["std","std_intensity","intensity_std","stdev","stddev","sigma"])
+
+if None in (img_col, nroi_col, mean_col):
+    sys.exit(f"Missing required columns. Found: {list(df.columns)}")
+
+use_cols = [img_col, nroi_col, mean_col] + ([std_col] if std_col is not None else [])
+df = df[use_cols].dropna().copy()
+
+# Centroid in ORIGINAL units (for reporting)
+mu_rois = df[nroi_col].mean()
+mu_mean = df[mean_col].mean()
+
+# ---- Equal-weighted distance (z-score each feature) ----
+eps = 1e-9
+std_rois = df[nroi_col].std(ddof=0) + eps
+std_mean = df[mean_col].std(ddof=0) + eps
+
+z_rois = (df[nroi_col] - mu_rois) / std_rois
+z_mean = (df[mean_col] - mu_mean) / std_mean
+
+df["distance_eqw"] = np.sqrt(z_rois**2 + z_mean**2)
+
+top = df.sort_values("distance_eqw").head(10)
+
+print(f"Centroid (original units) over {len(df)} images:")
+print(f"  num_rois       = {mu_rois:.4f}")
+print(f"  mean_intensity = {mu_mean:.4f}\n")
+
+if std_col is None:
+    print("[i] No per-image std column found (searched for: std, std_intensity, intensity_std, stdev, stddev, sigma).")
+    print("10 filenames closest to centroid (equal-weighted by z-scoring):")
+    for i, r in enumerate(top.itertuples(index=False), 1):
+        print(f"{i:2d}. {getattr(r, img_col)}  "
+              f"(num_rois={getattr(r, nroi_col)}, mean_intensity={getattr(r, mean_col):.4f}, "
+              f"zDist={getattr(r, 'distance_eqw'):.4f})")
+else:
+    print("10 filenames closest to centroid (equal-weighted by z-scoring):")
+    for i, r in enumerate(top.itertuples(index=False), 1):
+        print(f"{i:2d}. {getattr(r, img_col)}  "
+              f"(num_rois={getattr(r, nroi_col)}, mean_intensity={getattr(r, mean_col):.4f}, "
+              f"std={getattr(r, std_col):.4f}, zDist={getattr(r, 'distance_eqw'):.4f})")
+```
 
 ```{code} python
-:label: AE1M
-:caption: AE trained on the nucleus dataset
+:label: TFRecord-shards
+:caption: Splits the dataset into one-hundred TFRecord shards.
+
+import os
+import hashlib
+import numpy as np
+import tensorflow as tf
+from tifffile import imread
+
+# ------------ Configuration ------------
+input_dir   = r'D:\Confocal_imaging_nuclei_tif\MIST_Fused_Images\ROIs'
+output_dir  = r'D:/Results/TFRecords'
+num_shards  = 100
+# ---------------------------------------
+
+def _bytes_feature(value):
+    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+
+def image_example(image_bytes, filename_relpath):
+    return tf.train.Example(features=tf.train.Features(feature={
+        'image_raw': _bytes_feature(image_bytes),
+        'filename':  _bytes_feature(filename_relpath.encode('utf-8')),  # store RELATIVE path
+    }))
+
+os.makedirs(output_dir, exist_ok=True)
+writers = [
+    tf.io.TFRecordWriter(os.path.join(output_dir, f"data_shard_{i:03d}.tfrecords"))
+    for i in range(num_shards)
+]
+
+print(f"Writing {num_shards} shards to {output_dir} from {input_dir}")
+count = 0
+
+# Deterministic iteration (sort by name or by full path)
+entries = sorted(
+    [e for e in os.scandir(input_dir) if e.is_file() and e.name.lower().endswith('.tif')],
+    key=lambda e: e.name  # or e.path if you prefer
+)
+
+for entry in entries:
+    img = imread(entry.path)  # expect (256, 256), uint8
+
+    if img.shape != (256, 256):
+        raise ValueError(f"Unexpected image shape {img.shape} for {entry.name}")
+
+    # ensure uint8, preserve raw values (no per-image normalization)
+    if img.dtype != np.uint8:
+        img = np.clip(img, 0, 255).astype(np.uint8, copy=False)
+
+    img_bytes = img.tobytes(order='C')
+
+    # Stable shard index from RELATIVE PATH (reproducible across runs/machines)
+    relpath  = os.path.relpath(entry.path, input_dir)
+    hval     = int(hashlib.md5(relpath.encode('utf-8')).hexdigest(), 16)
+    shard_idx = hval % num_shards
+
+    example = image_example(img_bytes, relpath)
+    writers[shard_idx].write(example.SerializeToString())
+
+    count += 1
+    if count % 10000 == 0:
+        print(f"Processed {count} images...")
+
+for w in writers:
+    w.close()
+
+print(f"TFRecord sharding complete. Total images: {count}")
+```
+
+```{code} python
+:label: nucleus_ae
+:caption: Convolutional autoencoder model trained on the nucleus dataset.
 
 import os
 import numpy as np
@@ -689,11 +971,12 @@ decoder.save_weights(os.path.join(results_dir, 'decoder_weights.h5'))
 
 ```
 
+# Results
+
 ## Embed latents
 
 ```{code} python
 :label: embed_latents
-:caption: 
 
 #!/usr/bin/env python3
 """
@@ -888,4 +1171,321 @@ with h5py.File(OUT_H5_PATH, 'w') as h5:
     total = cursor
     elapsed = time.time() - t0
     print(f"[✓] Done. Wrote {total:,} embeddings to {OUT_H5_PATH} in {elapsed/60:.1f} min.")
+```
+
+## t-SNE, UMAP and PCA embeddings
+
+```{code} python
+:label: embeddings
+
+#!/usr/bin/env python3
+"""
+Compute PCA (top-5 pairwise 2D), and UMAP/t-SNE with both cosine and euclidean
+metrics from RESULTS_DIR/latents.h5. No attrs; saves next to latents.h5.
+
+Output files (in RESULTS_DIR):
+  - pca_embeddings.h5
+      /scores_top5
+      /PC1_PC2, /PC1_PC3, ... (pairwise from top-5 PCs)
+
+  - umap_embeddings.h5
+      /umap_cosine
+      /umap_euclidean
+      /filenames
+
+  - tsne_embeddings.h5
+      /tsne_cosine
+      /tsne_euclidean
+      /filenames
+"""
+
+import os
+import time
+import h5py
+import numpy as np
+
+# --- threads politely ---
+logical_cores = os.cpu_count() or 1
+os.environ['LOKY_MAX_CPU_COUNT']   = str(logical_cores)
+os.environ['OPENBLAS_NUM_THREADS'] = str(logical_cores)
+os.environ['OMP_NUM_THREADS']      = str(logical_cores)
+os.environ['MKL_NUM_THREADS']      = str(logical_cores)
+os.environ['NUMEXPR_NUM_THREADS']  = str(logical_cores)
+
+from sklearn.decomposition import PCA
+import umap
+from openTSNE import TSNE
+
+# -----------------------------
+# CONFIG — EDIT THIS
+# -----------------------------
+RESULTS_DIR = r'D:/Results/09052025_AE1M_Conv2DTranspose'
+LATENTS_H5  = os.path.join(RESULTS_DIR, 'latents.h5')
+
+OUT_PCA_H5  = os.path.join(RESULTS_DIR, 'pca_embeddings.h5')
+OUT_UMAP_H5 = os.path.join(RESULTS_DIR, 'umap_embeddings.h5')
+OUT_TSNE_H5 = os.path.join(RESULTS_DIR, 'tsne_embeddings.h5')
+
+# Base params (metric overridden per run)
+UMAP_PARAMS_BASE = dict(
+    n_components=2,
+    random_state=42,
+    init="pca",
+    low_memory=True,
+    verbose=True,
+    n_jobs=logical_cores,  # keep for your environment
+)
+
+TSNE_PARAMS_BASE = dict(
+    n_components=2,
+    initialization="pca",
+    learning_rate="auto",
+    random_state=42,
+    n_jobs=logical_cores,
+)
+
+# Optional compression (set to 'gzip' to shrink files)
+H5_COMPRESSION      = None
+H5_COMPRESSION_OPTS = 4
+
+
+def _create_ds(h5, name, shape, dtype="float32"):
+    kwargs = dict(dtype=dtype)
+    if H5_COMPRESSION:
+        kwargs.update(compression=H5_COMPRESSION, compression_opts=H5_COMPRESSION_OPTS)
+    return h5.create_dataset(name, shape=shape, **kwargs)
+
+
+def main():
+    t0 = time.time()
+    if not os.path.isfile(LATENTS_H5):
+        raise FileNotFoundError(f"[!] latents.h5 not found at: {LATENTS_H5}")
+
+    # 1) Load latents + filenames
+    print(f"[i] Reading latents: {LATENTS_H5}")
+    with h5py.File(LATENTS_H5, "r") as hf:
+        z = np.asarray(hf["z"][...], dtype=np.float32)           # (N, D)
+        fn_raw = hf["filenames"][...]
+        filenames = [f.decode("utf-8") if isinstance(f, (bytes, bytearray)) else str(f) for f in fn_raw]
+
+    N, latent_dim = z.shape
+    print(f"[i] Loaded z: {z.shape} (float32). N={N:,}, latent_dim={latent_dim}")
+
+    # 2) PCA (scores + pairwise 2D for PC1..PC5)
+    print("[i] PCA: fit top-5 (or fewer)...")
+    k_keep = min(5, latent_dim)
+    pca_model = PCA(n_components=k_keep, random_state=42)
+    scores_top5 = pca_model.fit_transform(z).astype(np.float32)  # (N, k_keep)
+
+    if os.path.exists(OUT_PCA_H5):
+        print(f"[!] Removing existing: {OUT_PCA_H5}")
+        os.remove(OUT_PCA_H5)
+
+    print(f"[i] Writing PCA → {OUT_PCA_H5}")
+    with h5py.File(OUT_PCA_H5, "w") as h5:
+        _create_ds(h5, "scores_top5", scores_top5.shape)[:] = scores_top5
+        # flat datasets named PCi_PCj
+        for i in range(k_keep):
+            for j in range(i + 1, k_keep):
+                emb_2d = np.stack([scores_top5[:, i], scores_top5[:, j]], axis=1)
+                _create_ds(h5, f"PC{i+1}_PC{j+1}", emb_2d.shape)[:] = emb_2d.astype(np.float32)
+
+    # 3) UMAP — cosine & euclidean
+    umap_results = {}
+    for metric in ("cosine", "euclidean"):
+        params = dict(UMAP_PARAMS_BASE, metric=metric)
+        print(f"[i] UMAP (metric={metric}) ...")
+        umap_model = umap.UMAP(**params)
+        umap_results[metric] = umap_model.fit_transform(z).astype(np.float32)
+
+    if os.path.exists(OUT_UMAP_H5):
+        print(f"[!] Removing existing: {OUT_UMAP_H5}")
+        os.remove(OUT_UMAP_H5)
+
+    print(f"[i] Writing UMAP → {OUT_UMAP_H5}")
+    with h5py.File(OUT_UMAP_H5, "w") as h5:
+        _create_ds(h5, "umap_cosine",    umap_results["cosine"].shape)[:]    = umap_results["cosine"]
+        _create_ds(h5, "umap_euclidean", umap_results["euclidean"].shape)[:] = umap_results["euclidean"]
+        # filenames alongside for quick plotting
+        str_dt = h5py.string_dtype(encoding="utf-8")
+        d = h5.create_dataset("filenames", shape=(N,), dtype=str_dt)
+        d[:] = np.array(filenames, dtype=object)
+
+    # 4) t-SNE — cosine & euclidean
+    tsne_results = {}
+    for metric in ("cosine", "euclidean"):
+        params = dict(TSNE_PARAMS_BASE, metric=metric)
+        print(f"[i] t-SNE (metric={metric}) ...")
+        tsne_results[metric] = TSNE(**params).fit(z).astype(np.float32)
+
+    if os.path.exists(OUT_TSNE_H5):
+        print(f"[!] Removing existing: {OUT_TSNE_H5}")
+        os.remove(OUT_TSNE_H5)
+
+    print(f"[i] Writing t-SNE → {OUT_TSNE_H5}")
+    with h5py.File(OUT_TSNE_H5, "w") as h5:
+        _create_ds(h5, "tsne_cosine",    tsne_results["cosine"].shape)[:]    = tsne_results["cosine"]
+        _create_ds(h5, "tsne_euclidean", tsne_results["euclidean"].shape)[:] = tsne_results["euclidean"]
+        # filenames
+        str_dt = h5py.string_dtype(encoding="utf-8")
+        d = h5.create_dataset("filenames", shape=(N,), dtype=str_dt)
+        d[:] = np.array(filenames, dtype=object)
+
+    mins = (time.time() - t0) / 60.0
+    print(f"[✓] Done. Wrote:\n  {OUT_PCA_H5}\n  {OUT_UMAP_H5}\n  {OUT_TSNE_H5}\n[~] Elapsed: {mins:.1f} min")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+## Anomaly detection
+
+```{code} python
+:label: mse-per-image
+
+#!/usr/bin/env python3
+import os, csv, time
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Input, Conv2D, Conv2DTranspose, AveragePooling2D, Flatten, Dense, Reshape, ReLU
+from tensorflow.keras.optimizers import Adam
+
+# ────────────────────────────────────────────────────────────────────────
+# 0) Paths & knobs  ← adjust if needed
+# ────────────────────────────────────────────────────────────────────────
+shards_dir            = r'D:\Results\TFRecords'        # your uint8 TFRecords folder
+results_dir           = r'D:/Results/09052025_AE1M_Conv2DTranspose'  # where weights were saved
+encoder_weights_path  = os.path.join(results_dir, 'encoder_weights.h5')
+decoder_weights_path  = os.path.join(results_dir, 'decoder_weights.h5')
+output_csv            = os.path.join(results_dir, 'mse_per_image.csv')
+
+# TFRecord settings
+tfrecord_compression  = None   # set to 'GZIP' if shards were gzipped
+BATCH_SIZE            = 32
+NUM_PARALLEL_READS    = 4
+PREFETCH_BUFS         = 1
+
+# Model settings (must match training)
+img_h, img_w, img_c   = 256, 256, 1
+latent_dim            = 512
+learning_rate         = 3e-4
+
+# ────────────────────────────────────────────────────────────────────────
+# 1) GPU memory growth (safe on CPU too)
+# ────────────────────────────────────────────────────────────────────────
+gpus = tf.config.list_physical_devices("GPU")
+for g in gpus:
+    try:
+        tf.config.experimental.set_memory_growth(g, True)
+    except Exception:
+        pass
+
+# ────────────────────────────────────────────────────────────────────────
+# 2) Collect shards (no shuffle for deterministic pass)
+# ────────────────────────────────────────────────────────────────────────
+all_shards = sorted([
+    os.path.join(shards_dir, f)
+    for f in os.listdir(shards_dir)
+    if f.endswith('.tfrecords')
+])
+if not all_shards:
+    raise FileNotFoundError(f"No .tfrecords found in: {shards_dir}")
+
+print(f"[Info] Found {len(all_shards)} shards")
+
+# ────────────────────────────────────────────────────────────────────────
+# 3) TFRecord parsing (uint8 → float32 [0,1], keep filename alongside)
+# ────────────────────────────────────────────────────────────────────────
+feature_description = {
+    'image_raw': tf.io.FixedLenFeature([], tf.string),
+    'filename':  tf.io.FixedLenFeature([], tf.string),
+}
+
+def _parse_for_inference(example_proto):
+    data = tf.io.parse_single_example(example_proto, feature_description)
+    img  = tf.io.decode_raw(data['image_raw'], tf.uint8)
+    img  = tf.reshape(img, [img_h, img_w, img_c])
+    img  = tf.image.convert_image_dtype(img, tf.float32)  # [0,255] → [0,1]
+    fname = data['filename']
+    return img, fname
+
+def make_infer_dataset(shard_list):
+    ds = tf.data.TFRecordDataset(
+        shard_list,
+        num_parallel_reads=NUM_PARALLEL_READS,
+        compression_type=tfrecord_compression
+    )
+    ds = ds.map(_parse_for_inference, num_parallel_calls=tf.data.AUTOTUNE)
+    ds = ds.batch(BATCH_SIZE, drop_remainder=False)
+    ds = ds.prefetch(PREFETCH_BUFS)
+    return ds
+
+infer_ds = make_infer_dataset(all_shards)
+
+# ────────────────────────────────────────────────────────────────────────
+# 4) Rebuild model exactly as trained
+# ────────────────────────────────────────────────────────────────────────
+inp = Input((img_h, img_w, img_c), name='encoder_input')
+x = inp
+for filters in [16, 32, 64, 128]:
+    x = Conv2D(filters, 3, padding='same')(x); x = ReLU()(x)
+    x = Conv2D(filters, 3, padding='same')(x); x = ReLU()(x)
+    x = AveragePooling2D(pool_size=2)(x)  # same as (2, 2)
+
+flat = Flatten()(x)
+z = Dense(latent_dim, name='z')(flat)
+encoder = Model(inp, z, name='encoder')
+
+latent_in = Input((latent_dim,), name='z_sampling')
+x = Dense(16 * 16 * 128)(latent_in)
+x = Reshape((16, 16, 128))(x)
+for filters in [128, 64, 32, 16]:
+    x = Conv2DTranspose(filters, 3, strides=2, padding='same')(x); x = ReLU()(x)
+    x = Conv2D(filters, 3, padding='same')(x); x = ReLU()(x)
+
+decoded = tf.keras.layers.Conv2D(1, 3, padding='same', activation='sigmoid', name='decoder_output')(x)
+decoder = Model(latent_in, decoded, name='decoder')
+
+ae = Model(inp, decoder(encoder(inp)), name='autoencoder')
+ae.compile(optimizer=Adam(learning_rate), loss='mse', metrics=['mse'])  # compile not strictly needed for predict
+
+# Load weights
+if not (os.path.isfile(encoder_weights_path) and os.path.isfile(decoder_weights_path)):
+    raise FileNotFoundError("Encoder/decoder weights not found. Check paths:\n"
+                            f"  {encoder_weights_path}\n  {decoder_weights_path}")
+encoder.load_weights(encoder_weights_path)
+decoder.load_weights(decoder_weights_path)
+print("[Info] Weights loaded.")
+
+# ────────────────────────────────────────────────────────────────────────
+# 5) Iterate, predict, compute per-image MSE, write CSV
+# ────────────────────────────────────────────────────────────────────────
+os.makedirs(os.path.dirname(output_csv), exist_ok=True)
+total = 0
+start = time.time()
+
+with open(output_csv, 'w', newline='') as f:
+    writer = csv.writer(f)
+    writer.writerow(['filename', 'mse'])  # header
+
+    for step, (imgs, fnames) in enumerate(infer_ds, start=1):
+        # Forward pass
+        recons = ae.predict(imgs, batch_size=BATCH_SIZE, verbose=0)
+        # Per-image MSE over (H,W,C) in [0,1] domain (matches training loss)
+        mse_batch = tf.reduce_mean(tf.square(imgs - recons), axis=[1, 2, 3]).numpy()
+
+        # Decode filenames and write rows
+        fn_batch = [b.decode('utf-8') for b in fnames.numpy().tolist()]
+        for name, mse in zip(fn_batch, mse_batch):
+            writer.writerow([name, f"{mse:.8f}"])
+
+        total += len(fn_batch)
+        if step % 200 == 0:  # progress every ~200 batches
+            elapsed = time.time() - start
+            print(f"[{step:>6} batches] {total} images processed | {elapsed/60:.1f} min elapsed")
+
+elapsed = time.time() - start
+print(f"[Done] Wrote per-image MSE for {total} images → {output_csv}  |  {elapsed/60:.1f} min")
 ```
