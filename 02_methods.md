@@ -91,16 +91,17 @@ The size of a full stitched image approaches the maximum value that a 32-bit int
 
 The stitched quarter was displayed and saved, named by run and position. For example, Run53TL was from the top left quarter of the 53rd imaging experiment. The stitched quarters were then cropped into four quarters ({ref}`crop-quarters`), yielding n=16 stitched images per coverslip and N=1600 stitched images from all one-hundred experiments.
 
+(cellpose-segmentation)=
 ## 3) Segmentation with cellpose
 
 Nuclei were masked in the stitched images using a custom [cellpose](https://github.com/MouseLand/cellpose) model (CP_20250418_Nuclei_1Kmasks) [@doi:10.1038/s41592-020-01018-x]. We re-trained the nucleus model on N=125000 fields from our dataset, including n=1000 fields with manually-segmented nuclei. Advanced parameters in the graphical user interface were adjusted to flow_threshold: 0.5, cellprob_threshold: -2.0, diameter (pixels): 152.91. The cellpose model segmented the nuclei in all stitched images and the mask files were saved as .png files where each region of interest (ROI) is defined by a unique pixel value.
 
-```{admonition} The data processing methods are biased
+```{admonition} The data processing methods introduced biased
 :class: warning
 The detection of nuclei and the accuracy of the masks depended on the cellpose model. Our version of the cropped single-cell dataset was trained on fields including manual masks. Therefore, the population sampled in our single-cell dataset was defined by our semi-supervised cellpose model that was trained using manual masks. There are undesirable artifacts like blank images and inaccurate masks in the dataset, and sampling was likely inconsistent between stitched images due to variations in signal intensity. These limitations could be improved with better model training or more accurate manual segmentation within cellpose.
 ```
 
-## 4) Cropped single cell masked dataset: NucleusNet
+## 4) Cropped single cell masked dataset
 
 The orientation of a cell is known to confound the vector embedding of autoencoder models trained on single-cell microscopy data, motivating the development of orientation-invariant autoencoder models [@doi:10.1038/s41467-024-45362-4]. Similarly, a multi-encoder variational autoencoder model controlled for several transformational features like orientation that were 'uninformative' in single-cell analyses [@doi:10.1038/s42003-022-03218-x]. We [pre-aligned](https://github.com/jmhb0/o2vae/tree/master/prealignment) and center-cropped nuclei by fitting and rotating a minimal area rectangle to the cellpose mask ({ref}`crop-rois`). All values outside of the mask were set to zero in the cropped images. The dimensions of the uncompressed cropped images are 256x256 pixels, which is one-quarter the size of the 1024x1024 pixel microscopy fields.
 

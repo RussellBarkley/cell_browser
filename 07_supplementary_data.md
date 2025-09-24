@@ -26,7 +26,7 @@ Original (left) and reconstructed images (right) can be browsed by index and tra
 
 ---
 
-# Cherry-picked images for reference
+# Cherry-picked images for cross-reference in the text
 
 :::{figure} 
 :label: cell-cycle-phases
