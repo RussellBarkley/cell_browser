@@ -1,7 +1,0 @@
----
-Introduction
----
-
-Word
-
-Another word
