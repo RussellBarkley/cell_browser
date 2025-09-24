@@ -91,5 +91,6 @@ project:
     PBS: phosphate buffered saline
     EMMA: electron microscopy map
     MSE: mean squared error
+    CBIR: content based image retrieval
 site:
   template: book-theme
