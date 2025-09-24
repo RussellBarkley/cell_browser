@@ -1,6 +1,6 @@
 ---
-title: 'Representative microscopy image selection using autoencoders'
-short_title: Objective microscopy image selection
+title: 'Using autoencoders to select representative microscopy images'
+short_title: NucleusNet
 numbering:
   heading_2: false
 ---
