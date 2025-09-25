@@ -27,7 +27,7 @@ We sought to generate a large dataset because the performance of neural networks
 
 # Contributions
 
-### 1. A confocal microscopy dataset of over 1,000,000 masked cell nuclei.
+### 1. A confocal microscopy image dataset of over 1,000,000 masked cell nuclei.
 Large regions of coverslips were sampled with automated imaging methods on a confocal microscope, yielding over 250,000 high-magnification fields that were stitched into 1,600 panoramas to mask and crop 1,061,277 ROIs. See [data availability](#data-availability) for repositories and archives.
 
 ### 2. A novel use case for autoencoders: representative image selection.
