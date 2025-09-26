@@ -1,6 +1,6 @@
 ---
-title: 'Quickstart Template for Elemental Microscopy'
-short_title: EM Quickstart
+title: 'Using autoencoders to select representative microscopy images'
+short_title: NucleusNet
 numbering:
   heading_2: false
 ---
