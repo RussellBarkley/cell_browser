@@ -1,10 +1,13 @@
 ---
-Chapter 9
+title: Code
+numbering:
+  enumerator: 9.%s
+label : code_page
 ---
 
-# Preliminaries
+## Preliminaries
 
-## Autoencoder model trained on the MNIST dataset
+### Autoencoder model trained on the MNIST dataset
 
 ```{code} python
 :label: mnist-ae
@@ -191,9 +194,9 @@ print(f"[DONE] Latents + labels saved to {h5_path}")
 
 ```
 
-# Methods
+## Methods
 
-## 1. Sort tiles into quarters
+1. Sort tiles into quarters
 
 ```{code} python
 :label: sort-quarters
@@ -352,7 +355,7 @@ if __name__ == "__main__":
 
 ```
 
-## 2. Crop stitched quarters
+2. Crop stitched quarters
 
 ```{code} python
 :label: crop-quarters
@@ -408,7 +411,7 @@ for tif_path in tif_files:
 print("Tiling complete!")
 ```
 
-## 3. Align and crop ROIs
+3. Align and crop ROIs
 
 ```{code} python
 :label: crop-rois
@@ -558,9 +561,9 @@ if __name__ == '__main__':
     print("Cropping completed!")
 ```
 
-# Dataset
+## Dataset
 
-## Measure number and mean intensity of ROIs in stitched images
+### Measure number and mean intensity of ROIs in stitched images
 
 ```{code} python
 :label: scatter-code
@@ -971,9 +974,9 @@ decoder.save_weights(os.path.join(results_dir, 'decoder_weights.h5'))
 
 ```
 
-# Results
+## Results
 
-## Embed latents
+### Embed latents
 
 ```{code} python
 :label: embed_latents
@@ -1173,7 +1176,7 @@ with h5py.File(OUT_H5_PATH, 'w') as h5:
     print(f"[✓] Done. Wrote {total:,} embeddings to {OUT_H5_PATH} in {elapsed/60:.1f} min.")
 ```
 
-## t-SNE, UMAP and PCA embeddings
+### t-SNE, UMAP and PCA embeddings
 
 ```{code} python
 :label: embeddings
@@ -1339,7 +1342,7 @@ if __name__ == "__main__":
     main()
 ```
 
-## Anomaly detection
+### Anomaly detection
 
 ```{code} python
 :label: mse-per-image
