@@ -1,0 +1,14 @@
+numpy
+scipy
+h5py
+ipywidgets
+matplotlib
+colorspacious
+tqdm
+ipympl
+jupyterlab
+jupyterlab-myst
+cmasher
+tifffile
+tensorflow
+pillow
