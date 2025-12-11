@@ -2,28 +2,22 @@
 version: 1
 project:
   id: msa-em-cell-browser-1
-  title: Using autoencoders to select representative microscopy images
-  description: A novel method towards objective representative microscopy image selection.
-  short_title: NucleusNet
+  title: Unbiased representative images using embedded microscopy maps
+  description: Using automated imaging and next generation file formats for honest presentation and archival of light microscopy data.
+  short_title: Re-Imaging the Wheel
   keywords:
     - NucleusNet
-    - Dataset
-    - Cell nucleus
     - Microscopy
-    - Confocal microscope
-    - Method
-    - Representative image
-    - Image selection
-    - Neural network
-    - Machine learning
-    - Deep learning
-    - Artificial intelligence
-  github: https://github.com/msa-em/cell-browser
-  jupyter: true
-  # jupyter:
-  #  server:
-  #    url: 'http://localhost:8888'
-  #    token: '512ac78f14e1141db1fac17e8b4099c1e5bc7d589518b38c'
+    - Maps
+    - Virtual nanoscopy
+    - Reproducibility
+    - OME-Zarr
+  github: https://github.com/msa-em/cell-browser 
+ #jupyter: true
+  jupyter:
+    server:
+      url: 'http://localhost:8888'
+      token: '512ac78f14e1141db1fac17e8b4099c1e5bc7d589518b38c'
   open_access: true
   license: CC-BY-4.0
   banner: banner.png
@@ -54,26 +48,30 @@ project:
           ror: 05bnh6r87
       roles:
         - Conceptualization
-        - Visualization
+        - Project administration
         - Writing - original draft
+        - Data collection, analysis and visualizations
     - id: jslparker
       name: John Stuart Leslie Parker
-      email: gvarnavides@berkeley.edu
+      email: jsp7@cornell.edu
       orcid: 0000-0003-4487-4175
       affiliations:
         - id: cornell
       roles:
-        - Conceptualization
         - Funding acquisition
-        - Project administration
-        - Writing - original draft
   abbreviations:
-    PCA: principal component analysis
-    SVD: singular value decomposition
+    Barkley: Russell JR Barkley
+    Parker: John SL Parker
+    ER: endoplasmic reticulum
     ROI: region of interest
-    PBS: phosphate buffered saline
-    EMMA: electron microscopy map
+    T1L: type 1 Lang
+    T3D: type 3 Dearing
+    PFU: plaque forming unit
+    MOI: multiplicity of infection
+    DAPI: 4',6-Diamidino-2-phenylindole
+    DNA: deoxyribonucleic acid
     MSE: mean squared error
-    CBIR: content based image retrieval
+    PBS: phosphate buffered saline
+    PFA: paraformaldehyde
 site:
   template: book-theme
