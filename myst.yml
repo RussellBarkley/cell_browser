@@ -2,26 +2,27 @@
 version: 1
 project:
   id: msa-em-cell-browser-1
-  title: Unbiased representative images using embedded microscopy maps
-  description: Using automated imaging and next generation file formats for honest presentation and archival of light microscopy data.
-  short_title: Re-Imaging the Wheel
+  title: Reimag(in)ing representative images
+  description: Web-based microscopy maps as an unbiased method to replicate highly magnified representative microscopy images.
+  short_title: Virtual Microscopy
   keywords:
     - NucleusNet
+    - Virtual
     - Microscopy
-    - Maps
-    - Virtual nanoscopy
-    - Reproducibility
+    - Map
+    - Replication
     - OME-Zarr
+    - Deep Zoom
   github: https://github.com/msa-em/cell-browser 
- jupyter: true
- # jupyter:
- #   server:
- #     url: 'http://localhost:8888'
- #     token: '512ac78f14e1141db1fac17e8b4099c1e5bc7d589518b38c'
+  jupyter: true
+  # jupyter:
+  #   server:
+  #     url: 'http://localhost:8888'
+  #     token: '512ac78f14e1141db1fac17e8b4099c1e5bc7d589518b38c'
   open_access: true
   license: CC-BY-4.0
   banner: banner.png
-  thumbnail: thumbnail.webp
+  thumbnail: thumbnail.gif
   date: 2025-09-26
   requirements:
     - 'Dockerfile'
@@ -48,9 +49,29 @@ project:
           ror: 05bnh6r87
       roles:
         - Conceptualization
-        - Project administration
+        - Data Curation
+        - Formal Analysis
+        - Investigation
+        - Resources
+        - Software
+        - Visualization
         - Writing - original draft
-        - Data collection, analysis and visualizations
+        - Writing - review & editing
+    - id: ajbrodrick
+      name: Andrew James Brodrick
+      email: ajb64@umd.edu
+      orcid: 0009-0000-6389-0643
+      affiliations:
+        - id: maryland
+          department: 
+          institution: University of Maryland
+          address: 
+          ror: 047s2c258
+      roles:
+        - Conceptualization
+        - Methodology
+        - Software
+        - Visualization
     - id: jslparker
       name: John Stuart Leslie Parker
       email: jsp7@cornell.edu
@@ -58,10 +79,11 @@ project:
       affiliations:
         - id: cornell
       roles:
-        - Funding acquisition
+        - Funding Acquisition
+        - Supervision
+        - Project Administration
+        - Writing - review & editing
   abbreviations:
-    Barkley: Russell JR Barkley
-    Parker: John SL Parker
     ER: endoplasmic reticulum
     ROI: region of interest
     T1L: type 1 Lang
@@ -70,8 +92,41 @@ project:
     MOI: multiplicity of infection
     DAPI: 4',6-Diamidino-2-phenylindole
     DNA: deoxyribonucleic acid
-    MSE: mean squared error
     PBS: phosphate buffered saline
     PFA: paraformaldehyde
+    DZI: deep zoom image
+    ZDC: Z-drift compensation
+  toc:
+    - file: 00_index.md
+    - file: 01_introduction.md
+    - title: Microscopy Maps
+      children:
+        - file: 02_approach.md
+        - file: 03_model.md
+        - file: 04_plasmids.md
+        - file: 05_virus.md
+        - title: Antibodies
+          children:
+            - file: 06_antibody_ER.md
+            - file: 07_antibody_reovirus.md
+        - file: 08_results.md
+    - file: 09_discussion.md
+    - title: Supplemental
+      children:
+        - file: 10_oser.md
+        - file: 11_video.md
+        - title: Replication Attempts
+          children:
+            - file: 12_replicate_one.md
+            - file: 13_replicate_two.md
+            - file: 14_replicate_three.md
+            - file: 15_replicate_four.md
+        - title: Repetition Experiments
+          children:
+            - file: 16_antibody_reovirus.md
+            - file: 17_saturated_maps.md
+            - file: 18_discarded_maps.md
+        - file: 19_archived_maps.md
+        - file: 20_metadata.md
 site:
   template: book-theme

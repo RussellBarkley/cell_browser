@@ -9,6 +9,4 @@ ipympl
 jupyterlab
 jupyterlab-myst
 cmasher
-tifffile
-tensorflow
-pillow
+vizarr
