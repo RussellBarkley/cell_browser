@@ -6,24 +6,23 @@ numbering:
 
 Every academic discipline has its own ways of deciding what counts as valid knowledge (see [epistemology](<wiki:Epistemology>)).
 If biomedical researchers endorse empiricism and objectivity, then why are representative images sufficient to make claims?
-A representative image shows that an observation is possible, but a single image cannot describe frequency or variance.
+A representative image shows that an observation is possible, but a single image cannot capture frequency or variance.
 The scientific method demands reproducibility, yet representative images offer no way to communicate repeatability without quantitative analysis.
-In practice, representative images can show rare, idealized, or exaggerated examples to embellish results.
-The literature is full of exciting outcomes, but at the bench, experiments are nuanced and prone to failure.
+In practice, representative images often show idealized or exaggerated examples to best illustrate the authors' interpretations, but these may not capture the variability found in the data.
+The literature is full of exciting outcomes, but at the bench, experimental results are nuanced.
 
 Representative images are figures, which should not be confused with data.
 Data is the unprocessed file from the microscope, while figures are visual representations of data, shaped by the microscopist.
-Figures are the interface for peer review between the experimentalist and coauthors, principal investigators, reviewers and readers.
-Indeed, peer review seldom involves data and scientific discourse is limited by the information provided in figures.
+Figures are the interface for peer review between the experimentalist and coauthors, principal investigators, reviewers, and readers.
 This bottleneck is alleviated by virtual microscopy, which is practical to the broader bioimaging community.
-For example, OME-Zarr [@doi:10.1007/s00418-023-02209-1] supports several modalities including multiplexed imaging, spatial transcriptomics, light-sheet, infrared, scanning EM and digital pathology.
+For example, OME-Zarr [@doi:10.1007/s00418-023-02209-1] supports several modalities including multiplexed imaging, spatial transcriptomics, light-sheet, infrared, scanning EM and digital pathology, and its pyramidal, tiled structure ensures that even extremely large images remain responsive during interactive analysis.
 To maximize accessibility for readers, embedded interactive viewers retrieve data from cloud storage, which is supported by this journal.
 Virtual microscopy requires an internet connection, but this limitation is relatively unimportant for contemporary and future publishing.
 Web-based microscopy maps are trivial to make and share on Github [@doi:10.1242/jcs.262198], so they can be readily requested by reviewers of all journals.
 Data transparency could incentivize publishers to adopt this technology as an alternative to static figures.
 Because it nurtures open and rigorous peer review, microscopists and principal investigators might find virtual microscopy advantageous to make more robust claims with their bioimaging data.
 
-Barkley advocated for the use of virtual microscopy as an "unbiased" method to replicate highly magnified representative images.
+We advocate for the use of virtual microscopy as an "unbiased" method to replicate highly magnified representative images.
 This process involves automated sampling of reasonable populations from which the original claim should be reliably observed.
 Virtual microscopy is "unbiased" to the extent that the data was sampled with robotics and is hosted interactively on the web.
 To test this approach, an immunofluorescence imaging experiment in reovirus-infected cells [@doi:10.1128/mBio.01253-18] was reexamined with virtual microscopy.

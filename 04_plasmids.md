@@ -14,7 +14,7 @@ An earlier experiment combining moxGFP::μNS with these constructs was inconclus
 
 Cells transiently expressing mCherry-ER fusions were fixed 24 hours after transfection with TransIT-2020 and Lipofectamine 3000.
 Parker identified saturated signal in the original experiment and advised Barkley to repeat it, adjusting illumination settings individually.  
-The corrected maps are presented below (Figure 3.1) and the [saturated maps](#saturated_page) (Figure 15.1) and [discarded maps](#discarded_page) (Figures 16.1 to 16.5) are presented in the Supplemental.
+The corrected maps are presented below (Figure 3.1), and the [saturated maps](#saturated_page) (Figure 15.1) and [discarded maps](#discarded_page) (Figures 16.1 to 16.5) are presented in the Supplemental.
 
 :::::{figure}
 :label: figure3

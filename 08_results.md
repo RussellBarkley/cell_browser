@@ -5038,6 +5038,6 @@ Calreticulin and reovirus μNS antigens were detected by immunofluorescence.
 Chicken antiserum was paired with AlexaFluor647 secondary antibodies. 
 Nuclei were labelled for 15 minutes in Nucblue Fixed Cell Stain ReadyProbes reagent (containing DAPI) (R37606, Fisher) diluted in PBS, then a 25×25 grid of 625 fields was imaged. 
 Barkley annotated transfected cells expressing mCherry-KDEL based on the presence or absence of reovirus infection using the microATLAS builder. 
-Transfected-infected cells were labelled "Coincidence" because the co-occurrence of transfection and infection in the same cell is incidental, while transfected-uninfected cells were labelled "Transfection".
+Transfected-infected cells were labelled "Infected", while transfected-uninfected cells were labelled "Uninfected".
 Ambiguous cells were left unlabelled, and it is likely that some transfected cells were overlooked.
 :::

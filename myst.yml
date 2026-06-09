@@ -56,7 +56,6 @@ project:
         - Software
         - Visualization
         - Writing - original draft
-        - Writing - review & editing
     - id: ajbrodrick
       name: Andrew James Brodrick
       email: ajb64@umd.edu
@@ -72,6 +71,7 @@ project:
         - Methodology
         - Software
         - Visualization
+        - Writing - review & editing
     - id: jslparker
       name: John Stuart Leslie Parker
       email: jsp7@cornell.edu

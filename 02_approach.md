@@ -5,8 +5,8 @@ numbering:
 ---
 
 Already adopted by some clinicians and educators, virtual microscopy could also benefit researchers as an interface for communicating and interpreting image data.
-Indeed, interactive microscopy maps were first proposed for precisely this purpose, as an unbiased way to present electron microscopy data [@doi:10.1083/jcb.201201140].
-Free and open-source solutions [@doi:10.1242/jcs.262198] and recent advances in file formats [@doi:10.1007/s00418-023-02209-1] now make this feasible, yet these tools have not been adopted in scientific publishing.
+Indeed, interactive microscopy maps were first proposed for this purpose — as an unbiased way to present electron microscopy data [@doi:10.1083/jcb.201201140].
+Free and open-source solutions [@doi:10.1242/jcs.262198] and recent advances in file formats [@doi:10.1007/s00418-023-02209-1] now make this feasible, yet these tools have not been used in scientific publishing.
 Our approach combined automated image acquisition, multi-scale [pyramid](<wiki:Pyramid_(image_processing)>) formats and embedded interactive viewers ([](#abstract)).
 
 ```{figure} ./figures/Virtual_microscopy.png
@@ -15,11 +15,11 @@ Virtual microscopy. 1. Automated dataset collection with any suitable microscope
 ```
 
 Elemental Microscopy supports two interactive viewers; [Vizarr](https://github.com/hms-dbmi/vizarr) [@doi:10.1038/s41592-022-01482-7] and [OpenSeadragon](https://openseadragon.github.io/), enabling two methods of virtual microscopy based on OME-Zarr or Deep Zoom. 
-Authors can also build custom viewers. 
+Authors can also build custom viewers and embed them within online articles.
 Brodrick developed [microATLAS](https://github.com/LadInTheLab/microATLAS-widget), which was used to view OME-Zarr data in this article. 
 All three viewers are readily embeddable in Elemental Microscopy. 
 For Vizarr and OpenSeadragon, authors simply copy the markdown and replace the source URL with a link to their own data. 
-For microATLAS, authors are encouraged to use the [widget builder](https://ladinthelab.github.io/microATLAS-widget/builder.html) to generate code.
+For microATLAS, authors are encouraged to use the [widget builder](https://ladinthelab.github.io/microATLAS-widget/builder.html) to generate embedding code that specifies both the image and relevant customizations.
 
 ## OME-Zarr
 
@@ -90,7 +90,7 @@ By default, readers cannot control dimensions like channels or time, so it is be
 ```
 
 :::{dropdown} Imaging
-Data collection was fully-motorized for unbiased sampling of large panoramas from replicate immunofluorescence experiments.
+Data collection was fully motorized for unbiased sampling of large panoramas from replicate immunofluorescence experiments.
 Grids of overlapping tiles were acquired with a robotic XY stage (IX3-SSU) and Z-drift compensation (IX3-ZDC).
 Coverslips were imaged with an Olympus Fluoview FV3000 confocal microscope using a 100X objective lens (Olympus model UPLAPO100X, NA 1.50) in immersion oil. 
 Pinholes in each channel were maximized to capture the widest depth of field.
